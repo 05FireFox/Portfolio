@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const Antigravity = ({
@@ -52,6 +52,17 @@ const Antigravity = ({
     // Logic for InstancelMesh (Spheres)
     const dummy = useMemo(() => new THREE.Object3D(), []);
 
+    // --- FIX: This useMemo was moved UP (Before the return statement) ---
+    const pointsGeometry = useMemo(() => {
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(count * 3);
+        particles.forEach((p, i) => {
+            pos[i * 3] = p.ox; pos[i * 3 + 1] = p.oy; pos[i * 3 + 2] = p.oz;
+        });
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        return geo;
+    }, [particles, count]);
+
     // Current speed logic
     const currentSpeed = useRef(0.1);
 
@@ -88,7 +99,6 @@ const Antigravity = ({
 
         // --- POINTS MODE (BufferGeometry) ---
         else if (mesh.current && mesh.current.geometry.attributes.position) {
-            // ... (Keep existing points logic if user reverts)
             mesh.current.rotation.y += currentSpeed.current * 0.02;
             const positions = mesh.current.geometry.attributes.position.array;
             particles.forEach((p, i) => {
@@ -118,17 +128,6 @@ const Antigravity = ({
             </instancedMesh>
         );
     }
-
-    // Fallback to Points
-    const pointsGeometry = useMemo(() => {
-        const geo = new THREE.BufferGeometry();
-        const pos = new Float32Array(count * 3);
-        particles.forEach((p, i) => {
-            pos[i * 3] = p.ox; pos[i * 3 + 1] = p.oy; pos[i * 3 + 2] = p.oz;
-        });
-        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        return geo;
-    }, [particles, count]);
 
     return (
         <points ref={mesh}>
